@@ -41,6 +41,8 @@ const (
     SLASH       = "/"
     LT          = "<"
     GT          = ">"
+    EQ          = "=="
+    NEQ         = "!="
     // Identifiers and literals.
     IDENT       = "IDENT"
     INT         = "INT"
