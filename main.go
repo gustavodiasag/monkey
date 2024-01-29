@@ -1,10 +1,10 @@
 package main
 
 import (
-    "os"
-    "monkey/repl"
+	"monkey/repl"
+	"os"
 )
 
 func main() {
-   repl.Start(os.Stdin, os.Stdout)
+	repl.Start(os.Stdin, os.Stdout)
 }
