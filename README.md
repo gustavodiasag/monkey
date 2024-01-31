@@ -1,6 +1,6 @@
 # monkey
 
-Interpreter for the Monkey programming language written in Go.
+Interpreter for the Monkey programming language, just as an exercise to learn Go.
 
 # License
 
