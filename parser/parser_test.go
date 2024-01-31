@@ -9,55 +9,53 @@ import (
 )
 
 func TestLetStatement(t *testing.T) {
-	input := `
-let x = 5;
-let y = 10;
-let foobar = 1000;
-`
-	l := lexer.New(input)
-	p := New(l)
+    for _, tt := range []struct {
+        input string
+        expectedIdentifier string
+        exprectedValue interface{}
+    }{
+        {"let x = 5;", "x", 5},
+        {"let foobar = y;", "foobar", "y"},
+    } {
+        l := lexer.New(tt.input)
+    	p := New(l)
+    	program := p.ParseProgram()
+    	checkParserErrors(t, p)
+    
+       	if len(program.Statements) != 1 {
+    		t.Fatalf("program.Statements not 1. got %d", len(program.Statements))
+    	}
 
-	program := p.ParseProgram()
-	checkParserErrors(t, p)
-
-	if program == nil {
-		t.Fatalf("ParseProgram() returned 'nil'")
-	}
-	if len(program.Statements) != 3 {
-		t.Fatalf("program.Statements not 3. got %d", len(program.Statements))
-	}
-
-	for i, tt := range []struct {
-		expectedIdentifier string
-	}{
-		{"x"},
-		{"y"},
-		{"foobar"},
-	} {
-		stmt := program.Statements[i]
+		stmt := program.Statements[0]
 		if !testLetStatement(t, stmt, tt.expectedIdentifier) {
 			return
 		}
-	}
+
+        val := stmt.(*ast.LetStatement).Value
+        if !testLiteralExpression(t, val, tt.exprectedValue) {
+            return
+        }
+    }
 }
 
 func TestReturnStatement(t *testing.T) {
-	input := `
-return 0;
-return 10;
-return 1235135;
-`
-	l := lexer.New(input)
-	p := New(l)
+	for _, tt := range []struct {
+        input string
+        expectedValue interface{}
+    }{
+        {"return 5;", 5},
+        {"return foobar;", "foobar"},
+    } {
+    	l := lexer.New(tt.input)
+    	p := New(l)
+        program := p.ParseProgram()
+        checkParserErrors(t, p)
 
-	program := p.ParseProgram()
-	checkParserErrors(t, p)
-
-	if len(program.Statements) != 3 {
-		t.Fatalf("program.Statements not 3. got %d", len(program.Statements))
-	}
-
-	for _, stmt := range program.Statements {
+        if len(program.Statements) != 1 {
+            t.Fatalf("program.Statements not 1. got %d", len(program.Statements))
+        }
+        
+        stmt := program.Statements[0]
 		returnStmt, ok := stmt.(*ast.ReturnStatement)
 		if !ok {
 			t.Errorf("stmt not *ast.ReturnStatement. got %T", stmt)
@@ -66,6 +64,9 @@ return 1235135;
 		if returnStmt.TokenLiteral() != "return" {
 			t.Errorf("returnStmt.TokenLiteral not 'return'. got %q", returnStmt.TokenLiteral())
 		}
+        if testLiteralExpression(t, returnStmt.ReturnValue, tt.expectedValue) {
+            return
+        }
 	}
 }
 
@@ -125,10 +126,12 @@ func TestParsingPrefixExpressions(t *testing.T) {
     for _, tt := range []struct {
         input string
         operator string
-        integerValue int64
+        value interface{} 
     }{
         {"!5;", "!", 5},
         {"-15;", "-", 15},
+        {"!true;", "!", true},
+        {"!false;", "!", false},
     } {
         l := lexer.New(tt.input)
         p := New(l)
@@ -149,7 +152,10 @@ func TestParsingPrefixExpressions(t *testing.T) {
         if !ok {
             t.Fatalf("exp.Operator not '%s'. got '%s'", tt.operator, exp.Operator)
         }
-        if !testIntegerLiteral(t, exp.Right, tt.integerValue) {
+        if exp.Operator != tt.operator {
+            t.Fatalf("exp.Operator is not '%s'. got %s", tt.operator, exp.Operator)
+        }
+        if !testLiteralExpression(t, exp.Right, tt.value) {
             return
         }
     }
@@ -158,9 +164,9 @@ func TestParsingPrefixExpressions(t *testing.T) {
 func TestParsingInfixExpressions(t *testing.T) {
     for _, tt := range []struct {
         input string
-        leftValue int64
+        leftValue interface{} 
         operator string
-        rightValue int64
+        rightValue interface{}
     }{
         {"5 + 5;", 5, "+", 5},
         {"5 - 5;", 5, "-", 5},
@@ -170,6 +176,9 @@ func TestParsingInfixExpressions(t *testing.T) {
         {"5 < 5;", 5, "<", 5},
         {"5 == 5;", 5, "==", 5},
         {"5 != 5;", 5, "!=", 5},
+        {"true == true", true, "==", true},
+        {"true != false", true, "!=", false},
+        {"false == false", false, "==", false},
     } {
         l := lexer.New(tt.input)
         p := New(l)
@@ -185,21 +194,11 @@ func TestParsingInfixExpressions(t *testing.T) {
             t.Fatalf("program.Statements[0] not ast.ExpressionStatement. got %T",
                 program.Statements[0])
         }
-
-        exp, ok := stmt.Expression.(*ast.InfixExpression)
-        if !ok {
-            t.Fatalf("exp no ast.InfixExpression. got %T", stmt.Expression)
-        }
-        if !testIntegerLiteral(t, exp.Left, tt.leftValue) {
-            return
-            }
-        if exp.Operator != tt.operator {
-            t.Fatalf("exp.Operator not '%s'. got %s", tt.operator, exp.Operator)
-        }
-        if !testIntegerLiteral(t, exp.Right, tt.rightValue) {
+        if !testInfixExpression(t, stmt.Expression, tt.leftValue,
+            tt.operator, tt.rightValue) {
             return
         }
-    }
+     }
 }
 
 func TestOperatorPrecedenceParsing(t *testing.T) {
@@ -259,6 +258,23 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
             "3 + 4 * 5 == 3 * 1 + 4 * 5",
             "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
         },
+        {
+            "true",
+            "true",
+        },
+        {
+            "false",
+            "false",
+        },
+        {
+            "3 > 5 == false",
+            "((3 > 5) == false)",
+        },
+        {
+            "3 < 5 == true",
+            "((3 < 5) == true)",
+        },
+
     }
 
     for _, tt := range tests {
@@ -271,6 +287,41 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 
         if actual != tt.expected {
             t.Errorf("expected %q, got %q", tt.expected, actual)    
+        }
+    }
+}
+
+func TestBooleanExpression(t *testing.T) {
+    for _, tt := range []struct {
+        input string
+        expectedBoolean bool
+    }{
+        {"true;", true},
+        {"false;", false},
+    } {
+        l := lexer.New(tt.input) 
+        p := New(l)
+        program := p.ParseProgram()
+        checkParserErrors(t, p)
+
+        if len(program.Statements) != 1 {
+            t.Fatalf("program.Statements not 1. got %d",
+                len(program.Statements))
+        }
+
+        stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+        if !ok {
+            t.Fatalf("program.Statements[0] not ast.ExpresionStatement. got %T",
+                program.Statements[0])
+        }
+
+        boolean, ok := stmt.Expression.(*ast.Boolean)
+        if !ok {
+            t.Fatalf("exp not *ast.Boolean. got %T", stmt.Expression)
+        }
+        if boolean.Value != tt.expectedBoolean {
+            t.Errorf("boolean.Value not %t. got %t", tt.expectedBoolean,
+                boolean.Value)
         }
     }
 }
@@ -349,6 +400,23 @@ func testIdentifier(t *testing.T, exp ast.Expression, value string) bool {
     return true
 }
 
+func testBooleanLiteral(t *testing.T, exp ast.Expression, value bool) bool {
+    b, ok := exp.(*ast.Boolean)
+    if !ok {
+        t.Errorf("exp not *ast.Boolean. got %T", exp)
+    }
+    if b.Value != value {
+        t.Errorf("b.Value not %t. got %t", value, b.Value)
+        return false
+    }
+    if b.TokenLiteral() != fmt.Sprintf("%t", value) {
+        t.Errorf("b.TokenLiteral not %t. got %s",
+            value, b.TokenLiteral())
+        return false
+    }
+    return true
+}
+
 func testLiteralExpression(
     t *testing.T,
     exp ast.Expression,
@@ -362,6 +430,8 @@ func testLiteralExpression(
         return testIntegerLiteral(t, exp, v)
     case string:
         return testIdentifier(t, exp, v)
+    case bool:
+        return testBooleanLiteral(t, exp, v)
     }
     t.Errorf("type of exp not handled. got %T", exp)
     
