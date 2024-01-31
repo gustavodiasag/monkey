@@ -1,6 +1,6 @@
 # monkey
 
-Interpreter for the Monkey programming language, just as an exercise to learn Go.
+Interpreter for the [Monkey](https://interpreterbook.com/) programming language, just as an exercise to learn Go.
 
 # License
 
