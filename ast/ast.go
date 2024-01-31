@@ -105,102 +105,102 @@ type Identifier struct {
 
 func (i *Identifier) expressionNode()      {}
 func (i *Identifier) TokenLiteral() string { return i.Token.Literal }
-func (i *Identifier) String() string { return i.Value }
+func (i *Identifier) String() string       { return i.Value }
 
 type IntegerLiteral struct {
 	Token token.Token
 	Value int64
 }
 
-func (il *IntegerLiteral) expressionNode() {}
+func (il *IntegerLiteral) expressionNode()      {}
 func (il *IntegerLiteral) TokenLiteral() string { return il.Token.Literal }
-func (il *IntegerLiteral) String() string { return il.Token.Literal }
+func (il *IntegerLiteral) String() string       { return il.Token.Literal }
 
 type PrefixExpression struct {
-    Token token.Token
-    Operator string
-    Right Expression
+	Token    token.Token
+	Operator string
+	Right    Expression
 }
 
-func (pe *PrefixExpression) expressionNode() {}
+func (pe *PrefixExpression) expressionNode()      {}
 func (pe *PrefixExpression) TokenLiteral() string { return pe.Token.Literal }
 func (pe *PrefixExpression) String() string {
-    var out bytes.Buffer
+	var out bytes.Buffer
 
-    out.WriteString("(")
-    out.WriteString(pe.Operator)
-    out.WriteString(pe.Right.String())
-    out.WriteString(")")
+	out.WriteString("(")
+	out.WriteString(pe.Operator)
+	out.WriteString(pe.Right.String())
+	out.WriteString(")")
 
-    return out.String()
+	return out.String()
 }
 
 type InfixExpression struct {
-    Token token.Token
-    Left Expression
-    Operator string
-    Right Expression
+	Token    token.Token
+	Left     Expression
+	Operator string
+	Right    Expression
 }
 
-func (ie *InfixExpression) expressionNode() {}
+func (ie *InfixExpression) expressionNode()      {}
 func (ie *InfixExpression) TokenLiteral() string { return ie.Token.Literal }
 func (ie *InfixExpression) String() string {
-    var out bytes.Buffer
+	var out bytes.Buffer
 
-    out.WriteString("(")
-    out.WriteString(ie.Left.String())
-    out.WriteString(" " + ie.Operator + " ")
-    out.WriteString(ie.Right.String())
-    out.WriteString(")")
+	out.WriteString("(")
+	out.WriteString(ie.Left.String())
+	out.WriteString(" " + ie.Operator + " ")
+	out.WriteString(ie.Right.String())
+	out.WriteString(")")
 
-    return out.String()
+	return out.String()
 }
 
 type Boolean struct {
-    Token token.Token
-    Value bool
+	Token token.Token
+	Value bool
 }
 
-func (b *Boolean) expressionNode() {}
+func (b *Boolean) expressionNode()      {}
 func (b *Boolean) TokenLiteral() string { return b.Token.Literal }
-func (b *Boolean) String() string { return b.Token.Literal }
+func (b *Boolean) String() string       { return b.Token.Literal }
 
 type IfExpression struct {
-    Token token.Token
-    Condition Expression
-    Consequence *BlockStatement
-    Alternative *BlockStatement
-} 
+	Token       token.Token
+	Condition   Expression
+	Consequence *BlockStatement
+	Alternative *BlockStatement
+}
 
-func (ifx *IfExpression) expressionNode() {}
+func (ifx *IfExpression) expressionNode()      {}
 func (ifx *IfExpression) TokenLiteral() string { return ifx.Token.Literal }
 func (ifx *IfExpression) String() string {
-    var out bytes.Buffer
+	var out bytes.Buffer
 
-    out.WriteString("if")
-    out.WriteString(ifx.Condition.String())
-    out.WriteString(" ")
-    out.WriteString(ifx.Consequence.String())
+	out.WriteString("if")
+	out.WriteString(ifx.Condition.String())
+	out.WriteString(" ")
+	out.WriteString(ifx.Consequence.String())
 
-    if ifx.Alternative != nil {
-        out.WriteString("else ")
-        out.WriteString(ifx.Alternative.String())
-    }
-    return out.String()
+	if ifx.Alternative != nil {
+		out.WriteString("else ")
+		out.WriteString(ifx.Alternative.String())
+	}
+	return out.String()
 }
 
 type BlockStatement struct {
-    Token token.Token
-    Statements []Statement
+	Token      token.Token
+	Statements []Statement
 }
 
-func (bs *BlockStatement) statementNode() {}
+func (bs *BlockStatement) statementNode()       {}
 func (bs *BlockStatement) TokenLiteral() string { return bs.Token.Literal }
 func (bs *BlockStatement) String() string {
-    var out bytes.Buffer
+	var out bytes.Buffer
 
-    for _, s := range bs.Statements {
-        out.WriteString(s.String())
-    }
-    return out.String()
+	for _, s := range bs.Statements {
+		out.WriteString(s.String())
+	}
+	return out.String()
 }
