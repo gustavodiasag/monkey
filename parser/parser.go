@@ -224,7 +224,7 @@ func (p *Parser) parseIntegerLiteral() ast.Expression {
 
 	value, err := strconv.ParseInt(p.curToken.Literal, 0, 64)
 	if err != nil {
-		msg := fmt.Sprintf("unable to parse %q as integer", p.curToken.Literal)
+		msg := fmt.Sprintf("Couldn't parse '%q' as integer.", p.curToken.Literal)
 		p.errors = append(p.errors, msg)
 		return nil
 	}
@@ -393,11 +393,11 @@ func (p *Parser) curPrecedence() int {
 }
 
 func (p *Parser) peekError(t token.TokenType) {
-	msg := fmt.Sprintf("expected token: %s, got '%s'.", t, p.peekToken.Type)
+	msg := fmt.Sprintf("Expected token: '%s'. Got '%s'.", t, p.peekToken.Type)
 	p.errors = append(p.errors, msg)
 }
 
 func (p *Parser) noPrefixFnError(t token.TokenType) {
-	msg := fmt.Sprintf("no prefix parse function for %s found", t)
+	msg := fmt.Sprintf("No prefix parse function for '%s' found.", t)
 	p.errors = append(p.errors, msg)
 }
