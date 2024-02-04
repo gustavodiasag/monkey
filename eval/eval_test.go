@@ -15,6 +15,8 @@ func TestEvalIntegerExpresion(t *testing.T) {
     }{
         {"5", 5},
         {"10", 10},
+        {"-5", -5},
+        {"-10", -10},
     } {
         evaluated := testEval(tt.input)
         testIntegerObject(t, evaluated, tt.expected)
