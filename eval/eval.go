@@ -1,7 +1,7 @@
 package eval
 
 import (
-    "fmt"
+	"fmt"
 
 	"monkey/ast"
 	"monkey/object"
@@ -13,77 +13,101 @@ var (
 	NULL  = &object.Null{}
 )
 
-func Eval(node ast.Node) object.Object {
+func Eval(node ast.Node, env *object.Environment) object.Object {
 	switch node := node.(type) {
 	case *ast.Program:
-		return evalProgram(node.Statements)
+		return evalProgram(node.Statements, env)
 	case *ast.BlockStatement:
-		return evalBlockStatement(node)
-    case *ast.ReturnStatement:
-        val := Eval(node.ReturnValue)
-        if isError(val) {
-            return val
-        }
-        return &object.ReturnValue{Value: val}
+		return evalBlockStatement(node, env)
+	case *ast.ReturnStatement:
+		val := Eval(node.ReturnValue, env)
+		if isError(val) {
+			return val
+		}
+		return &object.ReturnValue{Value: val}
 	case *ast.ExpressionStatement:
-		return Eval(node.Expression)
+		return Eval(node.Expression, env)
+	case *ast.LetStatement:
+		val := Eval(node.Value, env)
+		if isError(val) {
+			return val
+		}
+		env.Insert(node.Name.Value, val)
+	case *ast.Identifier:
+		return evalIdentifier(node, env)
 	case *ast.IntegerLiteral:
 		return &object.Integer{Value: node.Value}
 	case *ast.Boolean:
 		return booleanObject(node.Value)
 	case *ast.PrefixExpression:
-		right := Eval(node.Right)
-        if isError(right) {
-            return right
-        }
+		right := Eval(node.Right, env)
+		if isError(right) {
+			return right
+		}
 		return evalPrefixExpression(node.Operator, right)
 	case *ast.InfixExpression:
-		left := Eval(node.Left)
-        if isError(left) {
-            return left
-        }
-		right := Eval(node.Right)
-        if isError(right) {
-            return right
-        }
+		left := Eval(node.Left, env)
+		if isError(left) {
+			return left
+		}
+		right := Eval(node.Right, env)
+		if isError(right) {
+			return right
+		}
 		return evalInfixExpression(node.Operator, left, right)
 	case *ast.IfExpression:
-		return evalIfExpression(node)
+		return evalIfExpression(node, env)
 	}
 
 	return nil
 }
 
-func evalProgram(stmts []ast.Statement) object.Object {
+func evalProgram(stmts []ast.Statement, env *object.Environment) object.Object {
 	var result object.Object
 
 	for _, stmt := range stmts {
-        result = Eval(stmt)
+		result = Eval(stmt, env)
 
-        switch result := result.(type) {
-        case *object.ReturnValue:
-            return result.Value
-        case *object.Error:
-            return result
-        }
+		switch result := result.(type) {
+		case *object.ReturnValue:
+			return result.Value
+		case *object.Error:
+			return result
+		}
 	}
 	return result
 }
 
-func evalBlockStatement(block *ast.BlockStatement) object.Object {
-    var result object.Object
+func evalBlockStatement(
+	block *ast.BlockStatement,
+	env *object.Environment,
+) object.Object {
 
-    for _, stmt := range block.Statements {
-        result = Eval(stmt)
+	var result object.Object
 
-        if result != nil {
-            rt := result.Type()
-            if rt == object.RETURN_OBJ || rt == object.ERROR_OBJ {
-                return result
-            }
-        }
-    }
-    return result
+	for _, stmt := range block.Statements {
+		result = Eval(stmt, env)
+
+		if result != nil {
+			rt := result.Type()
+			if rt == object.RETURN_OBJ || rt == object.ERROR_OBJ {
+				return result
+			}
+		}
+	}
+	return result
+}
+
+func evalIdentifier(
+	node *ast.Identifier,
+	env *object.Environment,
+) object.Object {
+
+	val, ok := env.Get(node.Value)
+	if !ok {
+		return newError("undefined identifier: " + node.Value)
+	}
+	return val
 }
 
 func booleanObject(input bool) *object.Boolean {
@@ -100,7 +124,7 @@ func evalPrefixExpression(operator string, right object.Object) object.Object {
 	case "-":
 		return evalMinusPrefixOperator(right)
 	default:
-        return newError("unknown operation: %s%s", operator, right.Type())
+		return newError("unknown operation: %s%s", operator, right.Type())
 	}
 }
 
@@ -119,7 +143,7 @@ func evalBangPrefixOperator(right object.Object) object.Object {
 
 func evalMinusPrefixOperator(right object.Object) object.Object {
 	if right.Type() != object.INT_OBJ {
-        return newError("unknown operation: -%s", right.Type())
+		return newError("unknown operation: -%s", right.Type())
 	}
 	value := right.(*object.Integer).Value
 
@@ -139,12 +163,12 @@ func evalInfixExpression(
 		return booleanObject(left == right)
 	case operator == "!=":
 		return booleanObject(left != right)
-    case left.Type() != right.Type():
-        return newError("type mismatch: %s %s %s",
-            left.Type(), operator, right.Type())
+	case left.Type() != right.Type():
+		return newError("type mismatch: %s %s %s",
+			left.Type(), operator, right.Type())
 	default:
-        return newError("unknown operation: %s %s %s",
-            left.Type(), operator, right.Type())
+		return newError("unknown operation: %s %s %s",
+			left.Type(), operator, right.Type())
 	}
 }
 
@@ -175,21 +199,21 @@ func evalIntegerInfixExpression(
 	case "!=":
 		return booleanObject(leftVal != rightVal)
 	default:
-        return newError("unknown operation: %s %s %s",
-            left.Type(), operator, right.Type())
+		return newError("unknown operation: %s %s %s",
+			left.Type(), operator, right.Type())
 	}
 }
 
-func evalIfExpression(ie *ast.IfExpression) object.Object {
-	condition := Eval(ie.Condition)
-    if isError(condition) {
-        return condition
-    }
+func evalIfExpression(ie *ast.IfExpression, env *object.Environment) object.Object {
+	condition := Eval(ie.Condition, env)
+	if isError(condition) {
+		return condition
+	}
 
 	if isTrue(condition) {
-		return Eval(ie.Consequence)
+		return Eval(ie.Consequence, env)
 	} else if ie.Alternative != nil {
-		return Eval(ie.Alternative)
+		return Eval(ie.Alternative, env)
 	}
 	return NULL
 }
@@ -204,9 +228,9 @@ func isTrue(obj object.Object) bool {
 }
 
 func newError(format string, a ...interface{}) *object.Error {
-    return &object.Error{Message: fmt.Sprintf(format, a...)}
+	return &object.Error{Message: fmt.Sprintf(format, a...)}
 }
 
 func isError(obj object.Object) bool {
-    return obj != nil && obj.Type() == object.ERROR_OBJ
+	return obj != nil && obj.Type() == object.ERROR_OBJ
 }
