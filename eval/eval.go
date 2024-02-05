@@ -14,9 +14,12 @@ var (
 func Eval(node ast.Node) object.Object {
 	switch node := node.(type) {
 	case *ast.Program:
-		return evalStatements(node.Statements)
-    case *ast.BlockStatement:
-        return evalStatements(node.Statements)
+		return evalProgram(node.Statements)
+	case *ast.BlockStatement:
+		return evalBlockStatement(node)
+    case *ast.ReturnStatement:
+        val := Eval(node.ReturnValue)
+        return &object.ReturnValue{Value: val}
 	case *ast.ExpressionStatement:
 		return Eval(node.Expression)
 	case *ast.IntegerLiteral:
@@ -30,20 +33,37 @@ func Eval(node ast.Node) object.Object {
 		left := Eval(node.Left)
 		right := Eval(node.Right)
 		return evalInfixExpression(node.Operator, left, right)
-    case *ast.IfExpression:
-        return evalIfExpression(node)
+	case *ast.IfExpression:
+		return evalIfExpression(node)
 	}
 
 	return nil
 }
 
-func evalStatements(stmts []ast.Statement) object.Object {
+func evalProgram(stmts []ast.Statement) object.Object {
 	var result object.Object
 
 	for _, stmt := range stmts {
 		result = Eval(stmt)
+
+        if returnVal, ok := result.(*object.ReturnValue); ok {
+            return returnVal.Value
+        }
 	}
 	return result
+}
+
+func evalBlockStatement(block *ast.BlockStatement) object.Object {
+    var result object.Object
+
+    for _, stmt := range block.Statements {
+        result = Eval(stmt)
+
+        if result != nil && result.Type() == object.RETURN_OBJ {
+            return result
+        }
+    }
+    return result
 }
 
 func booleanObject(input bool) *object.Boolean {
@@ -92,65 +112,65 @@ func evalInfixExpression(
 	right object.Object,
 ) object.Object {
 
-    switch {
-    case left.Type() == object.INT_OBJ && right.Type() == object.INT_OBJ:
-        return evalIntegerInfixExpression(operator, left, right)
-    case operator == "==":
-        return booleanObject(left == right)
-    case operator == "!=":
-        return booleanObject(left != right)
-    default:
-        return NULL
-    }
+	switch {
+	case left.Type() == object.INT_OBJ && right.Type() == object.INT_OBJ:
+		return evalIntegerInfixExpression(operator, left, right)
+	case operator == "==":
+		return booleanObject(left == right)
+	case operator == "!=":
+		return booleanObject(left != right)
+	default:
+		return NULL
+	}
 }
 
 func evalIntegerInfixExpression(
-    operator string,
-    left object.Object,
-    right object.Object,
+	operator string,
+	left object.Object,
+	right object.Object,
 ) object.Object {
 
-    leftVal := left.(*object.Integer).Value
-    rightVal := right.(*object.Integer).Value
+	leftVal := left.(*object.Integer).Value
+	rightVal := right.(*object.Integer).Value
 
-    switch operator {
-    case "+":
-        return &object.Integer{Value: leftVal + rightVal}
-    case "-":
-        return &object.Integer{Value: leftVal - rightVal}
-    case "*":
-        return &object.Integer{Value: leftVal * rightVal}
-    case "/":
-        return &object.Integer{Value: leftVal / rightVal}
-    case "<":
-        return booleanObject(leftVal < rightVal)
-    case ">":
-        return booleanObject(leftVal > rightVal)
-    case "==":
-        return booleanObject(leftVal == rightVal)
-    case "!=":
-        return booleanObject(leftVal != rightVal)
-    default:
-        return NULL
-    }
+	switch operator {
+	case "+":
+		return &object.Integer{Value: leftVal + rightVal}
+	case "-":
+		return &object.Integer{Value: leftVal - rightVal}
+	case "*":
+		return &object.Integer{Value: leftVal * rightVal}
+	case "/":
+		return &object.Integer{Value: leftVal / rightVal}
+	case "<":
+		return booleanObject(leftVal < rightVal)
+	case ">":
+		return booleanObject(leftVal > rightVal)
+	case "==":
+		return booleanObject(leftVal == rightVal)
+	case "!=":
+		return booleanObject(leftVal != rightVal)
+	default:
+		return NULL
+	}
 }
 
 func evalIfExpression(ie *ast.IfExpression) object.Object {
-    condition := Eval(ie.Condition)
+	condition := Eval(ie.Condition)
 
-    if isTrue(condition) {
-        return Eval(ie.Consequence)
-    } else if ie.Alternative != nil {
-        return Eval(ie.Alternative)
-    }
-    return NULL
+	if isTrue(condition) {
+		return Eval(ie.Consequence)
+	} else if ie.Alternative != nil {
+		return Eval(ie.Alternative)
+	}
+	return NULL
 }
 
 func isTrue(obj object.Object) bool {
-    switch obj {
-    case FALSE, NULL:
-        return false
-    default:
-        return true
-    }
+	switch obj {
+	case FALSE, NULL:
+		return false
+	default:
+		return true
+	}
 }
