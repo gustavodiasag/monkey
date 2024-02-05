@@ -104,67 +104,86 @@ func TestIfElseExpressions(t *testing.T) {
 }
 
 func TestReturnStatements(t *testing.T) {
-    for _, tt := range []struct {
-        input string
-        expected int64
-    }{
-        {"return 10;", 10 },
-        {"return 10; 9", 10},
-        {"return 2 * 5; 9;", 10},
-        {"9; return 2 * 5; 9;", 10},
-    } {
-        evaluated := testEval(tt.input)
-        testIntegerObject(t, evaluated, tt.expected)
-    }
+	for _, tt := range []struct {
+		input    string
+		expected int64
+	}{
+		{"return 10;", 10},
+		{"return 10; 9", 10},
+		{"return 2 * 5; 9;", 10},
+		{"9; return 2 * 5; 9;", 10},
+	} {
+		evaluated := testEval(tt.input)
+		testIntegerObject(t, evaluated, tt.expected)
+	}
 }
 
 func TestErrorHandling(t *testing.T) {
-    for _, tt := range []struct {
-        input string
-        expected string
-    }{
-        {
-            "5 + true;",
-            "type mismatch: INTEGER + BOOLEAN",
-        },
-        {
-            "5 + true; 5;",
-            "type mismatch: INTEGER + BOOLEAN",
-        },
-        {
-            "-true",
-            "unknown operation: -BOOLEAN",
-        },
-        {
-            "true + false;",
-            "unknown operation: BOOLEAN + BOOLEAN",
-        },
-        {
-            "if (10 > 1) { true + false; }",
-            "unknown operation: BOOLEAN + BOOLEAN",
-        },
-    } {
-        evaluated := testEval(tt.input)
+	for _, tt := range []struct {
+		input    string
+		expected string
+	}{
+		{
+			"5 + true;",
+			"type mismatch: INTEGER + BOOLEAN",
+		},
+		{
+			"5 + true; 5;",
+			"type mismatch: INTEGER + BOOLEAN",
+		},
+		{
+			"-true",
+			"unknown operation: -BOOLEAN",
+		},
+		{
+			"true + false;",
+			"unknown operation: BOOLEAN + BOOLEAN",
+		},
+		{
+			"if (10 > 1) { true + false; }",
+			"unknown operation: BOOLEAN + BOOLEAN",
+		},
+		{
+			"foobar",
+			"undefined identifier: foobar",
+		},
+	} {
+		evaluated := testEval(tt.input)
 
-        errObj, ok := evaluated.(*object.Error)
-        if !ok {
-            t.Errorf("Object not Error. Got %T (%+v)",
-                evaluated, evaluated)
-            continue
-        }
-        if errObj.Message != tt.expected {
-            t.Errorf("Message mismatch. Expected %q, got %q",
-               tt.expected, errObj.Message)
-        }
-    }
+		errObj, ok := evaluated.(*object.Error)
+		if !ok {
+			t.Errorf("Object not Error. Got %T (%+v)",
+				evaluated, evaluated)
+			continue
+		}
+		if errObj.Message != tt.expected {
+			t.Errorf("Message mismatch. Expected %q, got %q",
+				tt.expected, errObj.Message)
+		}
+	}
+}
+
+func TestLetStatement(t *testing.T) {
+	for _, tt := range []struct {
+		input    string
+		expected int64
+	}{
+		{"let a = 5; a;", 5},
+		{"let a = 5 * 5; a;", 25},
+		{"let a = 5; let b = a; b;", 5},
+		{"let a = 5; let b = a; let c = a + b + 5; c;", 15},
+	} {
+		testIntegerObject(t, testEval(tt.input), tt.expected)
+	}
 }
 
 func testEval(input string) object.Object {
 	l := lexer.New(input)
 	p := parser.New(l)
 	program := p.ParseProgram()
+	env := object.NewEnv()
 
-	return Eval(program)
+	return Eval(program, env)
 }
 
 func testIntegerObject(t *testing.T, obj object.Object, expected int64) bool {
