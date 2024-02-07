@@ -61,6 +61,16 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
         params := node.Parameters
         body := node.Body
         return &object.Function{Parameters: params, Env: env, Body: body}
+    case *ast.CallExpression:
+        fn := Eval(node.Function, env)
+        if isError(fn) {
+            return fn
+        }
+        args := evalExpressions(node.Arguments, env)
+        if len(args) == 1 && isError(args[0]) {
+           return args[0] 
+        }
+        return applyFunction(fn, args)
 	}
 
 	return nil
@@ -80,6 +90,23 @@ func evalProgram(stmts []ast.Statement, env *object.Environment) object.Object {
 		}
 	}
 	return result
+}
+
+func evalExpressions(
+    exps []ast.Expression,
+    env *object.Environment,
+) []object.Object {
+
+    var result []object.Object
+
+    for _, e := range exps {
+        evaluated := Eval(e, env)
+        if isError(evaluated) {
+            return []object.Object{evaluated}
+        }
+        result = append(result, evaluated)
+    }
+    return result
 }
 
 func evalBlockStatement(
@@ -222,6 +249,37 @@ func evalIfExpression(ie *ast.IfExpression, env *object.Environment) object.Obje
 	return NULL
 }
 
+func applyFunction(fn object.Object, args []object.Object) object.Object {
+    function, ok := fn.(*object.Function)
+    if !ok {
+        return newError("not a function: %s", fn.Type())
+    }
+    extendedEnv := extendFunctionEnv(function, args)
+    evaluated := Eval(function.Body, extendedEnv)
+
+    return unwrapReturnValue(evaluated)
+}
+
+func extendFunctionEnv(
+    fn *object.Function,
+    args []object.Object,
+) *object.Environment {
+    
+    env := object.NewEnclosedEnvironment(fn.Env)
+
+    for i, param := range fn.Parameters {
+        env.Insert(param.Value, args[i])
+    }
+    return env
+}
+
+func unwrapReturnValue(obj object.Object) object.Object {
+    if retval, ok := obj.(*object.ReturnValue); ok {
+        return retval.Value
+    }
+    return obj
+}
+
 func isTrue(obj object.Object) bool {
 	switch obj {
 	case FALSE, NULL:
@@ -238,3 +296,4 @@ func newError(format string, a ...interface{}) *object.Error {
 func isError(obj object.Object) bool {
 	return obj != nil && obj.Type() == object.ERROR_OBJ
 }
+
