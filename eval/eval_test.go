@@ -229,6 +229,19 @@ addTwo(2);
     testIntegerObject(t, testEval(input), 4)
 }
 
+func TestStringLiteral(t *testing.T) {
+    input := `"foo"`
+
+    evaluated := testEval(input)
+    str, ok := evaluated.(*object.String)
+    if !ok {
+        t.Fatalf("Object not String. Got %T (%+v)", evaluated, evaluated)
+    }
+    if str.Value != "foo" {
+        t.Errorf("Object.Value mismatch. Expected 'foo', got %q", str.Value)
+    }
+}
+
 func testEval(input string) object.Object {
 	l := lexer.New(input)
 	p := parser.New(l)

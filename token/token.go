@@ -46,6 +46,7 @@ const (
 	// Identifiers and literals.
 	IDENT = "IDENT"
 	INT   = "INT"
+    STRING = "STRING"
 	// Keywords.
 	ELSE     = "ELSE"
 	FALSE    = "FALSE"

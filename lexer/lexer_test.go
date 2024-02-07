@@ -29,6 +29,9 @@ if (5 < 10) {
 
 10 == 10;
 10 != 9;
+
+"foobar"
+"foo bar"
 `
 	l := New(input)
 
@@ -108,6 +111,8 @@ if (5 < 10) {
 		{token.NEQ, "!="},
 		{token.INT, "9"},
 		{token.SEMICOLON, ";"},
+        {token.STRING, "foobar"},
+        {token.STRING, "foo bar"},
 		{token.EOF, ""},
 	} {
 		tok := l.NextToken()
