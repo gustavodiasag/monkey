@@ -147,6 +147,10 @@ func TestErrorHandling(t *testing.T) {
 			"foobar",
 			"undefined identifier: foobar",
 		},
+		{
+			`"foo" - "bar"`,
+			"unknown operation: STRING - STRING",
+		},
 	} {
 		evaluated := testEval(tt.input)
 
@@ -239,6 +243,19 @@ func TestStringLiteral(t *testing.T) {
 	}
 	if str.Value != "foo" {
 		t.Errorf("Object.Value mismatch. Expected 'foo', got %q", str.Value)
+	}
+}
+
+func TestStringConcat(t *testing.T) {
+	input := `"foo" + " " + "bar"`
+
+	evaluated := testEval(input)
+	str, ok := evaluated.(*object.String)
+	if !ok {
+		t.Fatalf("Object not String. Got %T (%+v)", evaluated, evaluated)
+	}
+	if str.Value != "foo bar" {
+		t.Errorf("Object.Value mismatch. Expected 'foo bar', got %q", str.Value)
 	}
 }
 
