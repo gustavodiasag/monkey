@@ -11,13 +11,13 @@ import (
 type ObjectType string
 
 const (
-	INT_OBJ    = "INTEGER"
-	BOOL_OBJ   = "BOOLEAN"
-	NULL_OBJ   = "NULL"
-	RETURN_OBJ = "RETURN_VALUE"
-	ERROR_OBJ  = "ERROR"
-    FUNCTION_OBJ = "FUNCTION"
-    STRING_OBJ = "STRING"
+	INT_OBJ      = "INTEGER"
+	BOOL_OBJ     = "BOOLEAN"
+	NULL_OBJ     = "NULL"
+	RETURN_OBJ   = "RETURN_VALUE"
+	ERROR_OBJ    = "ERROR"
+	FUNCTION_OBJ = "FUNCTION"
+	STRING_OBJ   = "STRING"
 )
 
 type Object interface {
@@ -52,28 +52,28 @@ func (rv *ReturnValue) Type() ObjectType { return RETURN_OBJ }
 func (rv *ReturnValue) Inspect() string  { return rv.Value.Inspect() }
 
 type Function struct {
-    Parameters []*ast.Identifier
-    Body *ast.BlockStatement
-    Env *Environment
+	Parameters []*ast.Identifier
+	Body       *ast.BlockStatement
+	Env        *Environment
 }
 
 func (f *Function) Type() ObjectType { return FUNCTION_OBJ }
 func (f *Function) Inspect() string {
-    var out bytes.Buffer
-    
-    params := []string{}
-    for _, param := range f.Parameters {
-        params = append(params, param.String())
-    }
+	var out bytes.Buffer
 
-    out.WriteString("fn")
-    out.WriteString("(")
-    out.WriteString(strings.Join(params, ", "))
-    out.WriteString(") {\n")    
-    out.WriteString(f.Body.String())
-    out.WriteString("\n}")
-    
-    return out.String()
+	params := []string{}
+	for _, param := range f.Parameters {
+		params = append(params, param.String())
+	}
+
+	out.WriteString("fn")
+	out.WriteString("(")
+	out.WriteString(strings.Join(params, ", "))
+	out.WriteString(") {\n")
+	out.WriteString(f.Body.String())
+	out.WriteString("\n}")
+
+	return out.String()
 }
 
 type Error struct {
@@ -84,8 +84,8 @@ func (e *Error) Type() ObjectType { return ERROR_OBJ }
 func (e *Error) Inspect() string  { return "Error: " + e.Message }
 
 type String struct {
-    Value string
+	Value string
 }
 
 func (s *String) Type() ObjectType { return STRING_OBJ }
-func (s *String) Inspect() string { return s.Value }
+func (s *String) Inspect() string  { return s.Value }

@@ -178,47 +178,47 @@ func TestLetStatement(t *testing.T) {
 }
 
 func TestFunctionObject(t *testing.T) {
-    input := "fn(x) { x + 2; };"
+	input := "fn(x) { x + 2; };"
 
-    evaluated := testEval(input)
-    fn, ok := evaluated.(*object.Function)
-    if !ok {
-        t.Fatalf("Object not Function. got %T (%+v)", evaluated, evaluated)
-    }
+	evaluated := testEval(input)
+	fn, ok := evaluated.(*object.Function)
+	if !ok {
+		t.Fatalf("Object not Function. got %T (%+v)", evaluated, evaluated)
+	}
 
-    if len(fn.Parameters) != 1 {
-        t.Fatalf("Wrong amount of parameters. Parameters: %+v",
-            fn.Parameters)
-    }
-    if fn.Parameters[0].String() != "x" {
-        t.Fatalf("Parameter not 'x'. Got %q", fn.Parameters[0])
-    }
+	if len(fn.Parameters) != 1 {
+		t.Fatalf("Wrong amount of parameters. Parameters: %+v",
+			fn.Parameters)
+	}
+	if fn.Parameters[0].String() != "x" {
+		t.Fatalf("Parameter not 'x'. Got %q", fn.Parameters[0])
+	}
 
-    expectedBody := "(x + 2)"
-    if fn.Body.String() != expectedBody {
-        t.Fatalf("Body mismatch. Expected %q, got %q",
-            expectedBody, fn.Body.String())
-    }
+	expectedBody := "(x + 2)"
+	if fn.Body.String() != expectedBody {
+		t.Fatalf("Body mismatch. Expected %q, got %q",
+			expectedBody, fn.Body.String())
+	}
 }
 
 func TestFunctionApplication(t *testing.T) {
-    for _, tt := range []struct {
-        input string
-        expected int64
-    }{
-        {"let identity = fn(x) { x; }; identity(5);", 5},
-        {"let identity = fn(x) { return x; }; identity(5);", 5},
-        {"let double = fn(x) { x * 2; }; double(5);", 10},
-        {"let add = fn(x, y) { x + y; }; add(5, 5);", 10},
-        {"let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20},
-        {"fn(x) { x; }(5)", 5},
-    } {
-        testIntegerObject(t, testEval(tt.input), tt.expected)
-    }
+	for _, tt := range []struct {
+		input    string
+		expected int64
+	}{
+		{"let identity = fn(x) { x; }; identity(5);", 5},
+		{"let identity = fn(x) { return x; }; identity(5);", 5},
+		{"let double = fn(x) { x * 2; }; double(5);", 10},
+		{"let add = fn(x, y) { x + y; }; add(5, 5);", 10},
+		{"let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20},
+		{"fn(x) { x; }(5)", 5},
+	} {
+		testIntegerObject(t, testEval(tt.input), tt.expected)
+	}
 }
 
 func TestClosures(t *testing.T) {
-    input := `
+	input := `
 let newAdder = fn(x) {
     fn (y) { x + y };
 };
@@ -226,20 +226,20 @@ let newAdder = fn(x) {
 let addTwo = newAdder(2);
 addTwo(2);
 `
-    testIntegerObject(t, testEval(input), 4)
+	testIntegerObject(t, testEval(input), 4)
 }
 
 func TestStringLiteral(t *testing.T) {
-    input := `"foo"`
+	input := `"foo"`
 
-    evaluated := testEval(input)
-    str, ok := evaluated.(*object.String)
-    if !ok {
-        t.Fatalf("Object not String. Got %T (%+v)", evaluated, evaluated)
-    }
-    if str.Value != "foo" {
-        t.Errorf("Object.Value mismatch. Expected 'foo', got %q", str.Value)
-    }
+	evaluated := testEval(input)
+	str, ok := evaluated.(*object.String)
+	if !ok {
+		t.Fatalf("Object not String. Got %T (%+v)", evaluated, evaluated)
+	}
+	if str.Value != "foo" {
+		t.Errorf("Object.Value mismatch. Expected 'foo', got %q", str.Value)
+	}
 }
 
 func testEval(input string) object.Object {
