@@ -34,18 +34,20 @@ const (
 	FACTOR
 	PREFIX
 	CALL
+	INDEX
 )
 
 var precedences = map[token.TokenType]int{
-	token.EQ:     EQ,
-	token.NEQ:    EQ,
-	token.LT:     COMP,
-	token.GT:     COMP,
-	token.PLUS:   TERM,
-	token.MINUS:  TERM,
-	token.SLASH:  FACTOR,
-	token.STAR:   FACTOR,
-	token.LPAREN: CALL,
+	token.EQ:       EQ,
+	token.NEQ:      EQ,
+	token.LT:       COMP,
+	token.GT:       COMP,
+	token.PLUS:     TERM,
+	token.MINUS:    TERM,
+	token.SLASH:    FACTOR,
+	token.STAR:     FACTOR,
+	token.LPAREN:   CALL,
+	token.LBRACKET: INDEX,
 }
 
 func New(l *lexer.Lexer) *Parser {
@@ -80,6 +82,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.LT, p.parseInfixExpression)
 	p.registerInfix(token.GT, p.parseInfixExpression)
 	p.registerInfix(token.LPAREN, p.parseCallExpression)
+	p.registerInfix(token.LBRACKET, p.parseIndexExpression)
 
 	return p
 }
@@ -395,6 +398,19 @@ func (p *Parser) parseExpressionList(end token.TokenType) []ast.Expression {
 		return nil
 	}
 	return list
+}
+
+func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
+	exp := &ast.IndexExpression{Token: p.curToken, Left: left}
+
+	p.nextToken()
+
+	exp.Index = p.parseExpression(LOWEST)
+
+	if !p.expectPeek(token.RBRACKET) {
+		return nil
+	}
+	return exp
 }
 
 func (p *Parser) curTokenIs(t token.TokenType) bool {
