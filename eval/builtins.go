@@ -35,4 +35,21 @@ var builtins = map[string]*object.Builtin{
             return NULL
          },
     },
+    "tail": &object.Builtin{
+        Fn: func(args ...object.Object) object.Object {
+       	    if len(args) != 1 {
+				return newError("wrong number of arguments, expected 1")
+			}
+            if args[0].Type() != object.ARRAY_OBJ {
+                return newError("argument must be of type 'ARRAY'")
+            }
+
+            arr := args[0].(*object.Array)
+            length := len(arr.Elements)
+            if length > 0 {
+                return arr.Elements[length - 1]
+            }
+            return NULL
+         },
+    },
 }
