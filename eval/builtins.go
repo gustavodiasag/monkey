@@ -35,6 +35,23 @@ var builtins = map[string]*object.Builtin{
             return NULL
          },
     },
+    "last": &object.Builtin{
+        Fn: func(args ...object.Object) object.Object {
+       	    if len(args) != 1 {
+				return newError("wrong number of arguments, expected 1")
+			}
+            if args[0].Type() != object.ARRAY_OBJ {
+                return newError("argument must be of type 'ARRAY'")
+            }
+
+            arr := args[0].(*object.Array)
+            length := len(arr.Elements)
+            if length <= 0 {
+               return NULL 
+            }
+            return arr.Elements[length - 1]
+         },
+    },
     "tail": &object.Builtin{
         Fn: func(args ...object.Object) object.Object {
        	    if len(args) != 1 {
@@ -46,10 +63,32 @@ var builtins = map[string]*object.Builtin{
 
             arr := args[0].(*object.Array)
             length := len(arr.Elements)
-            if length > 0 {
-                return arr.Elements[length - 1]
+            if length <= 0 {
+               return NULL 
             }
-            return NULL
+            newElements := make([]object.Object, length - 1, length - 1)
+            copy(newElements, arr.Elements[1:length])
+
+            return &object.Array{Elements: newElements}
+         },
+    },
+    "append": &object.Builtin{
+        Fn: func(args ...object.Object) object.Object {
+       	    if len(args) != 2 {
+				return newError("wrong number of arguments, expected 2")
+			}
+            if args[0].Type() != object.ARRAY_OBJ {
+                return newError("argument must be of type 'ARRAY'")
+            }
+
+            arr := args[0].(*object.Array)
+            length := len(arr.Elements)
+
+            newElements := make([]object.Object, length + 1, length + 1)
+            copy(newElements, arr.Elements)
+            newElements[length] = args[1]
+
+            return &object.Array{Elements: newElements}
          },
     },
 }
