@@ -304,22 +304,22 @@ func (ie *IndexExpression) String() string {
 }
 
 type HashLiteral struct {
-    Token token.Token
-    Pairs map[Expression]Expression
+	Token token.Token
+	Pairs map[Expression]Expression
 }
 
-func (hl *HashLiteral) expressionNode() {}
+func (hl *HashLiteral) expressionNode()      {}
 func (hl *HashLiteral) TokenLiteral() string { return hl.Token.Literal }
 func (hl *HashLiteral) String() string {
-    var out bytes.Buffer
-    
-    pairs := []string{}
-    for k, v := range hl.Pairs {
-        pairs = append(pairs, k.String() + ":" + v.String())
-    }
-    out.WriteString("{")
-    out.WriteString(strings.Join(pairs, ", "))
-    out.WriteString("}")
+	var out bytes.Buffer
 
-    return out.String()
+	pairs := []string{}
+	for k, v := range hl.Pairs {
+		pairs = append(pairs, k.String()+":"+v.String())
+	}
+	out.WriteString("{")
+	out.WriteString(strings.Join(pairs, ", "))
+	out.WriteString("}")
+
+	return out.String()
 }
