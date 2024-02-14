@@ -152,7 +152,7 @@ func TestErrorHandling(t *testing.T) {
 			"unknown operation: STRING - STRING",
 		},
 		{
-			`{"name": "foo"[fn(x) { x }];`,
+			`{"name": "foo"}[fn(x) { x }];`,
 			"invalid as hash key: FUNCTION",
 		},
 	} {
