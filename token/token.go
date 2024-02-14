@@ -34,6 +34,7 @@ const (
 	RBRACE    = "}"
 	LBRACKET  = "["
 	RBRACKET  = "]"
+	COLON     = ":"
 	// Operators.
 	ASSIGN = "="
 	PLUS   = "+"
