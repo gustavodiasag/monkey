@@ -688,7 +688,7 @@ func TestParsingEmptyHashLiteral(t *testing.T) {
 }
 
 func TestParsingHashLiteralsWithExpressions(t *testing.T) {
-	input := `{"one": 0 + ', "two": 10 - 8, "three": 15 / 5}`
+	input := `{"one": 0 + 1, "two": 10 - 8, "three": 15 / 5}`
 
 	l := lexer.New(input)
 	p := New(l)
